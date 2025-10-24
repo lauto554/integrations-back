@@ -1,5 +1,23 @@
 import { Request, Response, NextFunction } from "express";
 import { ResponseModel } from "../backend-resources/models/ResponseModel";
+import { validateMethod } from "../backend-resources/utils";
+
+export const validateSignIn = (req: Request, res: Response, next: NextFunction) => {
+  if (!validateMethod(req, res, "POST")) return;
+
+  const { company, username, password } = req.body;
+
+  if (!company || !username || !password) {
+    const response = ResponseModel.create(
+      "error",
+      400,
+      "Faltan campos requeridos: empresa, usuario o contrasenia.",
+    );
+    res.status(400).json(response);
+    return;
+  }
+  return next();
+};
 
 export const validateEmpresaModo = (req: Request, res: Response, next: NextFunction): void => {
   const { empresa, modo } = req.params;

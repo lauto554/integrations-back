@@ -4,6 +4,7 @@ import morgan from "morgan";
 import router from "./routers/router";
 import testRouter from "./routers/testRouter";
 import "colors";
+import authRouter from "./routers/authRouter";
 
 export function startServer(port: number): Application {
   const app: Application = express();
@@ -14,6 +15,7 @@ export function startServer(port: number): Application {
 
   app.use("/", router);
   app.use("/tests", testRouter);
+  app.use("/auth", authRouter);
 
   // Manejo de rutas no encontradas
   app.use("*", (req: Request, res: Response) => {
@@ -30,7 +32,7 @@ export function startServer(port: number): Application {
     const response = ResponseModel.create(
       "error",
       500,
-      `Error interno del servidor ${err.message}`
+      `Error interno del servidor ${err.message}`,
     );
 
     res.status(500).json(response);
