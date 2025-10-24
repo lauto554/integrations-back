@@ -1,0 +1,4 @@
+[submodule "src/backend-resources"]
+	path = src/backend-resources
+	url = https://github.com/lauto554/backend-resources
+	branch = main
