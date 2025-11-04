@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from "uuid";
 import apiSupabase from "../backend-resources/lib/apiSupabase";
 import apiMercado from "../lib/apiMercado";
 
@@ -158,6 +159,256 @@ export class AppService {
       });
 
       const response = requestUser.data;
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getAccessTokenMercado(refreshToken: string) {
+    try {
+      // 2. Obtener client_id y client_secret de la app
+      const urlIdSecret = `/rest/v1/mercadopagoapp?select=client_id,client_secret&idapp=eq.1`;
+
+      const requestIdSecret = await apiSupabase.get(urlIdSecret);
+
+      const clientId = requestIdSecret.data?.[0]?.client_id;
+      const clientSecret = requestIdSecret.data?.[0]?.client_secret;
+
+      if (!clientId || !clientSecret) throw new Error("No se encontró client_id/client_secret");
+
+      // 3. Pedir el access_token a MercadoPago
+      const urlToken = `/oauth/token`;
+
+      const tokenPayload = new URLSearchParams({
+        grant_type: "refresh_token",
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+      }).toString();
+
+      const requestToken = await apiMercado.post(urlToken, tokenPayload, {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
+
+      const accessToken = requestToken.data?.access_token;
+      if (!accessToken) throw new Error("No se pudo obtener access_token de MercadoPago");
+
+      return accessToken;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getStores(user_id: string, accessToken: string) {
+    try {
+      const url = `/users/${user_id}/stores/search`;
+
+      const request = await apiMercado.get(url, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const response = request.data;
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async putStore(accessToken: string, userId: string, storeId: string, externalId: string) {
+    try {
+      const url = `/users/${userId}/stores/${storeId}`;
+
+      const body = {
+        external_id: externalId,
+      };
+
+      const request = await apiMercado.put(url, body, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const response = request.data;
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getPos(accessToken: string) {
+    try {
+      const url = `/pos`;
+
+      const request = await apiMercado.get(url, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const response = request.data;
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async putPos(accessToken: string, posId: string, externalId: string) {
+    try {
+      const url = `/pos/${posId}`;
+
+      const body = {
+        external_id: externalId,
+      };
+
+      const request = await apiMercado.put(url, body, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const response = request.data;
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getDevices(accessToken: string) {
+    try {
+      const url = `/terminals/v1/list`;
+
+      const request = await apiMercado.get(url, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const response = request.data.data.terminals;
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async changeDeviceOperatingMode(accessToken: string, device_id: string, mode: string) {
+    try {
+      const url = `/terminals/v1/setup`;
+
+      const body = {
+        terminals: [
+          {
+            id: device_id,
+            operating_mode: mode,
+          },
+        ],
+      };
+
+      const request = await apiMercado.patch(url, body, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const response = request.data.data;
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async createOrderPoint(
+    accessToken: string,
+    device_id: string,
+    amount: string,
+    description: string,
+    print: number,
+  ) {
+    try {
+      const url = `/v1/orders`;
+      const idempotencyKey = uuidv4();
+
+      const body = {
+        type: "point",
+        external_reference: "point_prueba",
+        transactions: {
+          payments: [
+            {
+              amount: amount,
+            },
+          ],
+        },
+        config: {
+          point: {
+            terminal_id: device_id,
+            print_on_terminal: print === 1 ? "seller_ticket" : "no_ticket",
+            ticket_number: "S0392JED",
+          },
+        },
+        description: description,
+      };
+
+      const request = await apiMercado.post(url, body, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "X-Idempotency-Key": idempotencyKey,
+        },
+      });
+
+      const response = request.data;
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async createOrderQR(posId: string, mode: string, importe: number, accessToken: string) {
+    try {
+      const url = `/v1/orders`;
+      const idempotencyKey = uuidv4();
+
+      const body = {
+        type: "qr",
+        external_reference: "qr_prueba",
+        config: [
+          {
+            qr: {
+              external_pos_id: posId,
+              mode: mode,
+            },
+          },
+        ],
+        transactions: [
+          {
+            payments: [
+              {
+                amount: importe,
+              },
+            ],
+          },
+        ],
+      };
+
+      const request = await apiMercado.post(url, body, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "X-Idempotency-Key": idempotencyKey,
+        },
+      });
+
+      const response = request.data;
 
       return response;
     } catch (error) {

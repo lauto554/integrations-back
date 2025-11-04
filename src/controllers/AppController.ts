@@ -119,4 +119,221 @@ export class AppController {
       return;
     }
   }
+
+  static async getDataMpStores(req: Request, res: Response) {
+    try {
+      const { idEmpresa, idUsuario } = req as any;
+      const { user_id } = req.params;
+
+      const appName = getAppName();
+      const idApp = await AuthService.getIdApp(appName);
+
+      const data = {
+        empresa: idEmpresa,
+        idapp: idApp,
+        idusuario: idUsuario,
+      };
+
+      const datos = await AppService.getRefreshToken(data);
+
+      const refreshTokenMercado = datos[0].refresh_token;
+
+      const accessTokenMercado = await AppService.getAccessTokenMercado(refreshTokenMercado);
+
+      const stores = await AppService.getStores(user_id, accessTokenMercado);
+
+      res.json(ResponseModel.create("success", 200, "getMercadoStores OK", stores));
+      return;
+    } catch (error: any) {
+      console.error("Error fetching MP user data:", error.response.data);
+      res.status(500).json({ error: error.message || error.toString() });
+      return;
+    }
+  }
+
+  static async assignStoreId(req: Request, res: Response) {
+    try {
+      const { idEmpresa, idUsuario } = req as any;
+      const { userId, storeId, externalId } = req.params;
+
+      const appName = getAppName();
+      const idApp = await AuthService.getIdApp(appName);
+
+      const data = {
+        empresa: idEmpresa,
+        idusuario: idUsuario,
+        idapp: idApp,
+      };
+
+      const datos = await AppService.getRefreshToken(data);
+
+      const refreshTokenMercado = datos[0].refresh_token;
+
+      const accessTokenMercado = await AppService.getAccessTokenMercado(refreshTokenMercado);
+
+      await AppService.putStore(accessTokenMercado, userId, storeId, externalId);
+
+      res.json(ResponseModel.create("success", 200, "patchStoreId OK"));
+      return;
+    } catch (error: any) {
+      console.error("Error fetching MP user data:", error.response.data);
+      res.status(500).json({ error: error.message || error.toString() });
+      return;
+    }
+  }
+
+  static async getDataMpPos(req: Request, res: Response) {
+    try {
+      const { idEmpresa, idUsuario } = req as any;
+
+      const appName = getAppName();
+      const idApp = await AuthService.getIdApp(appName);
+
+      const data = {
+        empresa: idEmpresa,
+        idapp: idApp,
+        idusuario: idUsuario,
+      };
+
+      const datos = await AppService.getRefreshToken(data);
+
+      const refreshTokenMercado = datos[0].refresh_token;
+
+      const accessTokenMercado = await AppService.getAccessTokenMercado(refreshTokenMercado);
+
+      const pos = await AppService.getPos(accessTokenMercado);
+
+      res.json(ResponseModel.create("success", 200, "getMercadoPos OK", pos));
+      return;
+    } catch (error: any) {
+      console.error("Error fetching MP user data:", error.response.data);
+      res.status(500).json({ error: error.message || error.toString() });
+      return;
+    }
+  }
+
+  static async assignPosId(req: Request, res: Response) {
+    try {
+      const { idEmpresa, idUsuario } = req as any;
+      const { posId, externalId } = req.params;
+
+      const appName = getAppName();
+      const idApp = await AuthService.getIdApp(appName);
+
+      const data = {
+        empresa: idEmpresa,
+        idusuario: idUsuario,
+        idapp: idApp,
+      };
+
+      const datos = await AppService.getRefreshToken(data);
+
+      const refreshTokenMercado = datos[0].refresh_token;
+
+      const accessTokenMercado = await AppService.getAccessTokenMercado(refreshTokenMercado);
+
+      await AppService.putPos(accessTokenMercado, posId, externalId);
+
+      res.json(ResponseModel.create("success", 200, "patchPosId OK"));
+      return;
+    } catch (error: any) {
+      console.error("Error fetching MP user data:", error.response.data);
+      res.status(500).json({ error: error.message || error.toString() });
+      return;
+    }
+  }
+
+  static async getDataMpDevices(req: Request, res: Response) {
+    try {
+      const { idEmpresa, idUsuario } = req as any;
+
+      const appName = getAppName();
+      const idApp = await AuthService.getIdApp(appName);
+
+      const data = {
+        empresa: idEmpresa,
+        idapp: idApp,
+        idusuario: idUsuario,
+      };
+
+      const datos = await AppService.getRefreshToken(data);
+
+      const refreshTokenMercado = datos[0].refresh_token;
+
+      const accessTokenMercado = await AppService.getAccessTokenMercado(refreshTokenMercado);
+
+      const devices = await AppService.getDevices(accessTokenMercado);
+
+      res.json(ResponseModel.create("success", 200, "getMercadoDevices OK", devices));
+      return;
+    } catch (error: any) {
+      console.error("Error fetching MP user data:", error.response.data);
+      res.status(500).json({ error: error.message || error.toString() });
+      return;
+    }
+  }
+
+  static async patchDeviceMode(req: Request, res: Response) {
+    try {
+      const { idEmpresa, idUsuario } = req as any;
+
+      const { device_id, mode } = req.body;
+
+      const appName = getAppName();
+      const idApp = await AuthService.getIdApp(appName);
+
+      const data = {
+        empresa: idEmpresa,
+        idapp: idApp,
+        idusuario: idUsuario,
+      };
+
+      const datos = await AppService.getRefreshToken(data);
+
+      const refreshTokenMercado = datos[0].refresh_token;
+
+      const accessTokenMercado = await AppService.getAccessTokenMercado(refreshTokenMercado);
+
+      const devices = await AppService.changeDeviceOperatingMode(accessTokenMercado, device_id, mode);
+
+      res.json(ResponseModel.create("success", 200, "getMercadoDevices OK", devices));
+      return;
+    } catch (error: any) {
+      console.error("Error fetching MP user data:", error.response.data);
+      res.status(500).json({ error: error.message || error.toString() });
+      return;
+    }
+  }
+
+  static async createPointOrder(req: Request, res: Response) {
+    try {
+      const { idEmpresa, idUsuario } = req as any;
+
+      const { device_id, description, print, amount } = req.body;
+
+      const appName = getAppName();
+      const idApp = await AuthService.getIdApp(appName);
+
+      const data = {
+        empresa: idEmpresa,
+        idapp: idApp,
+        idusuario: idUsuario,
+      };
+
+      const datos = await AppService.getRefreshToken(data);
+
+      const refreshTokenMercado = datos[0].refresh_token;
+
+      const accessTokenMercado = await AppService.getAccessTokenMercado(refreshTokenMercado);
+
+      const order = await AppService.createOrderPoint(accessTokenMercado, device_id, amount, description, print);
+
+      res.json(ResponseModel.create("success", 200, "getMercadoDevices OK", order));
+      return;
+    } catch (error: any) {
+      console.error("Error creating order MP:", error.response.data.errors[0].details);
+      res.status(500).json({ error: error.message || error.toString() });
+      return;
+    }
+  }
 }
